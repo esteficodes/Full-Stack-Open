@@ -3,6 +3,8 @@ import { useState } from "react";
 const Button = ({ handleClick, text }) => (
   <button onClick={handleClick} style={{ marginRight: '10px' }}>{text}</button>
 );
+
+
 const StatisticLine = ({ text, value }) => (
   <tr>
     <td>{text}</td>
