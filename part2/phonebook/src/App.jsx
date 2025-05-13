@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import Filter from "./components/Filter";
-import PersonsForm from "./components/PersonForm";
+import PersonForm from "./components/PersonForm";
 import Persons from "./components/Persons";
 
 
@@ -57,7 +57,7 @@ const App = () => {
 
       <h2>Add a new</h2>
 
-      <PersonsForm 
+      <PersonForm 
       newName = {newName}
       newNumber = {newNumber}
       handleNameChange = {handleNameChange}
