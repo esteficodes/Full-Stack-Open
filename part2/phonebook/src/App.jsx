@@ -1,53 +1,26 @@
 import { useState, useEffect } from "react";
-import axios from 'axios';
+import personService from './services/persons';
 
 import Filter from "./components/Filter";
 import PersonForm from "./components/PersonForm";
 import Persons from "./components/Persons";
 
-
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: "Arto Hellas", number: "040-123456", id: 1 },
-    { name: "Ada Lovelace", number: "39-44-5323523", id: 2 },
-    { name: "Dan Abramov", number: "12-43-234345", id: 3 },
-    { name: "Mary Poppendieck", number: "39-23-6423122", id: 4 },
-  ]);
-
-  useEffect(() => {
-    axios
-    .get('http://localhost:3001/persons')
-    .then(response => {
-      setPersons(response.data)
-    })
-  }, [])
-
+  const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [filter, setFilter] = useState("");
 
+  useEffect(() => {
+    personService
+      .getAll()
+      .then(initialPersons => {
+        setPersons(initialPersons);
+      });
+  }, []);
+
   const handleNameChange = (event) => {
     setNewName(event.target.value);
-  };
-
-  const addPerson = (event) => {
-    event.preventDefault();
-
-    const nameExists = persons.some((person) => person.name === newName);
-
-    if (nameExists) {
-      alert(`${newName} is already added to phonebook`);
-      return;
-    }
-
-    const nameObject = {
-      name: newName,
-      number: newNumber,
-    };
-
-    setPersons(persons.concat(nameObject));
-    setNewName("");
-    setNewNumber("");
   };
 
   const handleNumberChange = (event) => {
@@ -58,33 +31,98 @@ const App = () => {
     setFilter(event.target.value);
   };
 
+  const handleDelete = (id, name) => {
+    const confirmDelete = window.confirm(`Delete ${name}?`);
+    if (!confirmDelete) return;
+
+    personService
+      .remove(id)
+      .then(() => {
+        setPersons(persons.filter(person => person.id !== id));
+      })
+      .catch(error => {
+        alert(`The person '${name}' was already removed from server.`);
+        setPersons(persons.filter(person => person.id !== id));
+      });
+  };
+
+ const addPerson = (event) => {
+  event.preventDefault();
+
+  const existingPerson = persons.find((person) => person.name === newName);
+
+  if (existingPerson) {
+    const confirmUpdate = window.confirm(
+      `${newName} is already added to phonebook. Replace the old number with a new one?`
+    );
+
+    if (confirmUpdate) {
+      const updatedPerson = { ...existingPerson, number: newNumber };
+
+      personService
+        .update(existingPerson.id, updatedPerson)
+        .then(returnedPerson => {
+          setPersons(persons.map(p =>
+            p.id !== existingPerson.id ? p : returnedPerson
+          ));
+          setNewName("");
+          setNewNumber("");
+        })
+        .catch(error => {
+          alert(`Information of ${newName} has already been removed from the server.`);
+          setPersons(persons.filter(p => p.id !== existingPerson.id));
+        });
+
+      return;
+    } else {
+      return; 
+    }
+  }
+
+  const nameObject = {
+    name: newName,
+    number: newNumber,
+  };
+
+  personService
+    .create(nameObject)
+    .then(returnedPerson => {
+      setPersons(persons.concat(returnedPerson));
+      setNewName("");
+      setNewNumber("");
+    });
+};
+
+
+  const personsToShow = persons.filter(person =>
+    person.name.toLowerCase().includes(filter.toLowerCase())
+  );
+
   return (
     <div>
       <h2>Phonebook</h2>
 
-     <Filter filter={filter} handleFilterChange={handleFilterChange} />
+      <Filter filter={filter} handleFilterChange={handleFilterChange} />
 
       <h2>Add a new</h2>
 
       <PersonForm 
-      newName = {newName}
-      newNumber = {newNumber}
-      handleNameChange = {handleNameChange}
-      handleNumberChange = {handleNumberChange}
-      addPerson = {addPerson}
+        newName={newName}
+        newNumber={newNumber}
+        handleNameChange={handleNameChange}
+        handleNumberChange={handleNumberChange}
+        addPerson={addPerson}
       />
 
       <h2>Numbers</h2>
 
       <Persons 
-       personsToShow={persons.filter(person =>
-        person.name.toLowerCase().includes(filter.toLowerCase())
-      )}
+        personsToShow={personsToShow}
+        handleDelete={handleDelete}
       />
-
-      
     </div>
   );
 };
 
 export default App;
+
