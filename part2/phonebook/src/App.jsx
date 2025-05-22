@@ -4,8 +4,11 @@ import personService from './services/persons';
 import Filter from "./components/Filter";
 import PersonForm from "./components/PersonForm";
 import Persons from "./components/Persons";
+import Notification from './components/Notification';
 
 const App = () => {
+  const [notification, setNotification] = useState(null);
+  const [isError, setIsError] = useState(false);
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
@@ -18,6 +21,14 @@ const App = () => {
         setPersons(initialPersons);
       });
   }, []);
+
+  const showNotification = (message, error = false) => {
+    setNotification(message);
+    setIsError(error);
+    setTimeout(() => {
+      setNotification(null);
+    }, 5000);
+  }
 
   const handleNameChange = (event) => {
     setNewName(event.target.value);
@@ -67,9 +78,10 @@ const App = () => {
           ));
           setNewName("");
           setNewNumber("");
+          showNotification(`Updated number for ${returnedPerson.name}`);
         })
         .catch(error => {
-          alert(`Information of ${newName} has already been removed from the server.`);
+          showNotification(`Information of ${newName} has already been removed from the server.`, true);
           setPersons(persons.filter(p => p.id !== existingPerson.id));
         });
 
@@ -90,6 +102,7 @@ const App = () => {
       setPersons(persons.concat(returnedPerson));
       setNewName("");
       setNewNumber("");
+      showNotification(`Added ${returnedPerson.name}`);
     });
 };
 
@@ -101,7 +114,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
-
+      <Notification message={notification} isError={isError} />
       <Filter filter={filter} handleFilterChange={handleFilterChange} />
 
       <h2>Add a new</h2>
